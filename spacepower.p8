@@ -2,6 +2,51 @@ pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
 -- ludum dare 39: running out of power
+-- by @sergixnet
+
+-- game over functions
+
+function init_over()
+ -- todo
+ state = over_state
+end
+
+function update_over()
+ if (btnp(4)) then
+  init_game()
+ end
+end
+
+function draw_over()
+ -- todo
+ print('game over', 64 - 40 , 10, 12)
+ print('best score ' .. best_score, 64 - 10, 20, 12)
+ print('press z to start', 64 - 8, 30, 12)
+end
+
+-- title functions
+
+function init_title()
+ -- todo
+ state = title_state
+end
+
+function update_title()
+ if (btnp(4)) then
+  init_game()
+ end
+end
+
+function draw_title()
+ -- todo
+ pset(32,9,3)
+ pset(34,9,3)
+ print('space power #ldjam39', 64 - 40 , 10, 12)
+ print('best score ' .. best_score, 64 - 10, 20, 12)
+ print('press z to start', 64 - 8, 30, 12)
+end
+
+-- game functions
 
 function abs_box(s)
  local box = {}
@@ -88,12 +133,15 @@ function update_aliens()
   end
  end
 
+ -- check if cleared all aliens
+ if #aliens == 0 then
+  create_aliens()
+ end
+
+
 end
 
 function draw_aliens()
-print('steps ' .. aliens_steps,0,0,11)
-print('aliens ' .. #aliens,0,10,11)
-print('score ' .. ship.score,0,16,11)
  for a in all(aliens) do
   spr(a.s, a.x, a.y)
  end
@@ -102,25 +150,42 @@ end
 function handle_game_input()
  if btn(0) then ship.x -= 2 end 
  if btn(1) then ship.x += 2 end
- -- if btn(2) then ship.y -= 1.5 end 
- -- if btn(3) then ship.y += 1.5 end
 
  if btnp(4) then fire() end
 end
 
 function handle_collisions()
- for b in all(bullets) do
+ for b in all(bullets) do --bullets vs aliens
   for a in all(aliens) do
    if coll(a,b) then
     ship.score += 1
+    ship.power += 1
     del(aliens,a)
     del(bullets,b)
    end
   end
  end
+
+ --aliens vs ship
+ for a in all(aliens) do
+  if (a.y >= 120 or coll(a, ship)) then
+   state = over_state
+  end
+ end
 end
 
 function update_ship()
+ --power down
+ if (t%10 < 2) then
+  ship.power -= 1
+ end
+
+ if (ship.power <= 0) then
+  -- gamne over
+  state = over_state
+ end
+
+
 
  -- dont collide borders
  if (ship.x <= 1) then
@@ -167,14 +232,16 @@ function draw_fire()
 end
 
 function init_game()
+ state = game_state
  t = 0
- wave = 0
 
+ wave = 0
  ship = {}
  ship.x = 64
  ship.y = 120
  ship.s = 1
  ship.score = 0
+ ship.power = 100
  ship.box = {x1=0, y1=0, x2=7, y2=7}
 
  bullets = {}
@@ -186,11 +253,18 @@ function init_game()
 end
 
 function update_game()
+ t += 1
  handle_game_input()
  update_ship()
  update_fire()
  update_aliens()
  handle_collisions()
+
+ -- update ui
+ score = ship.score
+ if (score > best_score) then
+  best_score = score
+ end
 end
 
 function draw_game()
@@ -198,29 +272,68 @@ function draw_game()
  spr(ship.s, ship.x ,ship.y)
  draw_fire()
  draw_aliens()
+
+ -- draw ui
+ 
+ print('score ' .. score,0,0,11)
+ print('best ' .. best_score,50,0,11)
+ print('power ' .. ship.power,95,0,11)
+
 end
 
+-- pico-8 functions
+
 function _init()
- init_game()
+ score = 0
+ best_score = 0
+ title_state = 0
+ game_state = 1
+ over_state = 2
+
+ state = title_state
+ init_title()
 end
 
 function _update()
- update_game()
+ if (state == title_state) then
+  update_title()
+ end
+
+ if (state == game_state) then
+  update_game()
+ end
+ 
+ if (state == over_state) then
+  update_over()
+ end
+
 end
 
 function _draw()
  cls()
- draw_game()
+
+ if (state == title_state) then
+  draw_title()
+ end
+
+ if (state == game_state) then
+  draw_game()
+ end
+
+ if (state == over_state) then
+  draw_over()
+ end
+
 end
 __gfx__
-00000000000770000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000007777000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00700700077777700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00077000077777700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00077000777777770000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00700700777777770000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000777777770000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000777777770000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000bb000000bb00000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000bb000000bb00000000000000000000000000000666000000000000000000000000000000000000000000000000000000000000000000000000000
+007007000b0bb0b00b0bb0b000000000000000000000000006060600000000000000000000000000000000000000000000000000000000000000000000000000
+000770000bb88bb00bb88bb000000000000000000000000066060600000000000000000000000000000000000000000000000000000000000000000000000000
+000770000bb88bb00bb88bb000000000000000000000000006060606000000000000000000000000000000000000000000000000000000000000000000000000
+007007000cbbbbd00dbbbbc000000000000000000000000066060660000000000000000000000000000000000000000000000000000000000000000000000000
+000000000c0bb0d00d0bb0c000000000000000000000000066060660000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000dc000000cd00000000000000000000000000006666600000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000b00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 000000000000b0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000b00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
