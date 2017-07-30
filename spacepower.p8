@@ -306,6 +306,7 @@ function init_game()
  create_aliens()
  aliens_steps = 0
  aliens_dir = 1
+ power_color = 11
 end
 
 function update_game()
@@ -325,6 +326,18 @@ function update_game()
 
  powerline_y0 = (ship.power*121)/100 + 6
 
+ if (ship.power < 100 and ship.power > 60) then
+  power_color = 11
+ end
+
+ if (ship.power < 60 and ship.power > 30) then
+  power_color = 9
+ end
+
+ if (ship.power < 30) then
+  power_color = 8
+ end
+
 end
 
 function draw_game()
@@ -336,8 +349,8 @@ function draw_game()
  
  print('score ' .. score,0,0,11)
  print('best ' .. best_score,50,0,11)
- print('power ' .. ship.power,95,0,11)
- line(127,121 - powerline_y0,127,127,11)
+ print('power ' .. ship.power,95,0, power_color)
+ line(127,121 - powerline_y0,127,127, power_color)
 
  draw_explosion()
 
