@@ -179,6 +179,7 @@ function handle_collisions()
    if coll(a,b) then
     ship.score += 1
     ship.power += 1
+    explode(a.x + 4,a.y + 4)
     del(aliens,a)
     del(bullets,b)
    end
@@ -232,6 +233,26 @@ function update_ship()
 
 end
 
+function explode(x,y)
+ local ex = {x=x, y=y, t=0}
+ add(explosions, ex)
+end
+
+function update_explosions()
+ for ex in all(explosions) do
+  ex.t += 1
+  if ex.t == 13 then
+   del(explosions, ex)
+  end
+ end
+end
+
+function draw_explosion()
+ for ex in all(explosions) do
+  circ(ex.x, ex.y, ex.t/3, 8+ex.t%3)
+ end
+end
+
 function fire()
  local b = {}
  b.x = ship.x
@@ -280,6 +301,7 @@ function init_game()
 
  bullets = {}
  aliens = {}
+ explosions = {}
 
  create_aliens()
  aliens_steps = 0
@@ -293,6 +315,7 @@ function update_game()
  update_fire()
  update_aliens()
  handle_collisions()
+ update_explosions()
 
  -- update ui
  score = ship.score
@@ -315,6 +338,8 @@ function draw_game()
  print('best ' .. best_score,50,0,11)
  print('power ' .. ship.power,95,0,11)
  line(127,121 - powerline_y0,127,127,11)
+
+ draw_explosion()
 
 end
 
